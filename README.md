@@ -9,9 +9,10 @@ Yii2 basic (Docker) с каталогом авторов/книг, подпис�
 ## Запуск
 ```bash
 cp .env.example .env
-make up              # старт php+mysql
-make migrate         # миграции
-make fixtures        # загрузить демо-данные
+make up               # старт php+mysql
+make composer-install # установка зависимостей
+make migrate          # миграции
+make fixtures         # загрузить демо-данные
 ```
 Открыть: http://localhost:8000
 
