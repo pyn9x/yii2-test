@@ -1,0 +1,14 @@
+parameters:
+  level: 6
+  paths:
+    - controllers
+    - models
+    - components
+    - migrations
+  bootstrapFiles:
+    - phpstan-bootstrap.php
+  excludePaths:
+    - vendor
+    - runtime
+    - tests
+  reportUnmatchedIgnoredErrors: true

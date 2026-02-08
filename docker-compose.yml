@@ -1,0 +1,29 @@
+services:
+  php:
+    image: yiisoftware/yii2-php:8.2-apache
+    container_name: yii2-php
+    env_file:
+      - .env
+    depends_on:
+      - db
+    volumes:
+      - ~/.composer-docker/cache:/root/.composer/cache:delegated
+      - ./:/app:delegated
+    ports:
+      - "8000:80"
+  db:
+    image: mysql:8.0
+    container_name: yii2-mysql
+    env_file:
+      - .env
+    environment:
+      - MYSQL_DATABASE=${DB_DATABASE}
+      - MYSQL_USER=${DB_USERNAME}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+volumes:
+  db_data:

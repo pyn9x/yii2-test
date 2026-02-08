@@ -1,0 +1,52 @@
+<?php
+namespace app\models\search;
+
+use app\models\Book;
+use yii\base\Model;
+use yii\data\ActiveDataProvider;
+
+class BookSearch extends Book
+{
+    public function rules(): array
+    {
+        return [
+            [['id', 'author_id'], 'integer'],
+            [['title', 'description', 'published_at'], 'safe'],
+        ];
+    }
+
+    public function scenarios(): array
+    {
+        return Model::scenarios();
+    }
+
+    /**
+     * @param array<string, mixed> $params
+     */
+    public function search(array $params): ActiveDataProvider
+    {
+        $query = Book::find()->with('author');
+
+        $dataProvider = new ActiveDataProvider([
+            'query' => $query,
+            'pagination' => ['pageSize' => 10],
+        ]);
+
+        $this->load($params);
+
+        if (!$this->validate()) {
+            return $dataProvider;
+        }
+
+        $query->andFilterWhere([
+            'id' => $this->id,
+            'author_id' => $this->author_id,
+            'published_at' => $this->published_at,
+        ]);
+
+        $query->andFilterWhere(['like', 'title', $this->title])
+            ->andFilterWhere(['like', 'description', $this->description]);
+
+        return $dataProvider;
+    }
+}
