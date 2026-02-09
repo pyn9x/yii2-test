@@ -32,7 +32,10 @@ $this->title = 'Books';
             ],
             'isbn',
             'published_at',
-            ['class' => ActionColumn::class],
+            [
+                'class' => ActionColumn::class,
+                'template' => Yii::$app->user->isGuest ? '{view}' : '{view} {update} {delete}',
+            ],
         ],
     ]); ?>
 </div>

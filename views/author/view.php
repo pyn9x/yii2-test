@@ -14,17 +14,18 @@ $this->title = $model->name;
                 'class' => 'btn btn-danger',
                 'data' => ['confirm' => 'Are you sure you want to delete this author?', 'method' => 'post'],
             ]) ?>
+        <?php endif; ?>
 
-            <?php
-            $subscription = Yii::$app->user->isGuest ? null : app\models\Subscription::findOne(['user_id' => Yii::$app->user->id, 'author_id' => $model->id]);
-            if ($subscription): ?>
-                <?= Html::a('Unsubscribe', ['/subscription/unsubscribe', 'id' => $subscription->id], [
-                    'class' => 'btn btn-warning',
-                    'data' => ['method' => 'post'],
-                ]) ?>
-            <?php else: ?>
-                <?= Html::a('Subscribe', ['/subscription/subscribe', 'authorId' => $model->id], ['class' => 'btn btn-success']) ?>
-            <?php endif; ?>
+        <?php
+        $subscription = Yii::$app->user->isGuest ? null : app\models\Subscription::findOne(['user_id' => Yii::$app->user->id, 'author_id' => $model->id]);
+        if ($subscription): ?>
+            <?= Html::a('Отписаться', ['/subscription/unsubscribe', 'id' => $subscription->id], [
+                'class' => 'btn btn-warning',
+                'data' => ['method' => 'post', 'confirm' => 'Вы уверены, что хотите отписаться?'],
+            ]) ?>
+        <?php else: ?>
+            <?php $buttonText = Yii::$app->user->isGuest ? 'Подписаться на уведомления (SMS)' : 'Подписаться'; ?>
+            <?= Html::a($buttonText, ['/subscription/subscribe', 'authorId' => $model->id], ['class' => 'btn btn-success']) ?>
         <?php endif; ?>
     </p>
 

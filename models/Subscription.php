@@ -7,7 +7,8 @@ use yii\db\ActiveQuery;
 
 /**
  * @property int $id
- * @property int $user_id
+ * @property int|null $user_id
+ * @property string|null $phone
  * @property int $author_id
  * @property int $created_at
  * @property-read User|null $user
@@ -31,9 +32,24 @@ class Subscription extends ActiveRecord
     public function rules(): array
     {
         return [
-            [['user_id', 'author_id'], 'required'],
+            [['author_id'], 'required'],
             [['user_id', 'author_id'], 'integer'],
-            [['user_id', 'author_id'], 'unique', 'targetAttribute' => ['user_id', 'author_id'], 'message' => 'Already subscribed'],
+            ['phone', 'string', 'max' => 20],
+            // Проверка: должен быть указан либо user_id, либо phone
+            ['user_id', 'required', 'when' => function($model) {
+                return empty($model->phone);
+            }, 'message' => 'Необходимо указать пользователя или номер телефона'],
+            ['phone', 'required', 'when' => function($model) {
+                return empty($model->user_id);
+            }, 'message' => 'Необходимо указать номер телефона или пользователя'],
+            // Уникальность для пользователей
+            [['user_id', 'author_id'], 'unique', 'targetAttribute' => ['user_id', 'author_id'],
+                'when' => function($model) { return !empty($model->user_id); },
+                'message' => 'Вы уже подписаны на этого автора'],
+            // Уникальность для гостей
+            [['phone', 'author_id'], 'unique', 'targetAttribute' => ['phone', 'author_id'],
+                'when' => function($model) { return !empty($model->phone); },
+                'message' => 'Этот номер телефона уже подписан на этого автора'],
             ['user_id', 'exist', 'skipOnError' => true, 'targetClass' => User::class, 'targetAttribute' => ['user_id' => 'id']],
             ['author_id', 'exist', 'skipOnError' => true, 'targetClass' => Author::class, 'targetAttribute' => ['author_id' => 'id']],
         ];
@@ -44,6 +60,7 @@ class Subscription extends ActiveRecord
         return [
             'id' => 'ID',
             'user_id' => 'User',
+            'phone' => 'Phone',
             'author_id' => 'Author',
             'created_at' => 'Created At',
         ];

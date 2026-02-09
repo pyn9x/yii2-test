@@ -1,4 +1,6 @@
 <?php
+
+use yii\grid\ActionColumn;
 use yii\grid\GridView;
 use yii\helpers\Html;
 
@@ -19,7 +21,10 @@ $this->title = 'Authors';
             'id',
             'name',
             'bio:ntext',
-            ['class' => 'yii\grid\ActionColumn'],
+            [
+                'class' => ActionColumn::class,
+                'template' => Yii::$app->user->isGuest ? '{view}' : '{view} {update} {delete}',
+            ],
         ],
     ]); ?>
 </div>

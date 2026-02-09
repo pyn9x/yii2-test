@@ -1,7 +1,9 @@
 <?php
 namespace app\controllers;
 
+use app\components\SmsService;
 use app\models\Author;
+use app\models\GuestSubscriptionForm;
 use app\models\Subscription;
 use Yii;
 use yii\base\Module;
@@ -19,9 +21,14 @@ class SubscriptionController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
-                'only' => ['index', 'subscribe', 'unsubscribe'],
                 'rules' => [
                     [
+                        'actions' => ['subscribe'],
+                        'allow' => true,
+                        'roles' => ['?', '@'],
+                    ],
+                    [
+                        'actions' => ['index', 'unsubscribe'],
                         'allow' => true,
                         'roles' => ['@'],
                     ],
@@ -48,27 +55,84 @@ class SubscriptionController extends Controller
         ]);
     }
 
-    public function actionSubscribe(int $authorId): Response
+    public function actionSubscribe(int $authorId): Response|string
     {
         $author = Author::findOne($authorId);
         if (!$author) {
             throw new NotFoundHttpException('Author not found');
         }
 
-        $model = Subscription::findOne(['user_id' => Yii::$app->user->id, 'author_id' => $authorId]);
-        if (!$model) {
+        // Если пользователь авторизован
+        if (!Yii::$app->user->isGuest) {
+            $subscription = Subscription::findOne(['user_id' => Yii::$app->user->id, 'author_id' => $authorId]);
+            if ($subscription) {
+                Yii::$app->session->setFlash('info', 'Вы уже подписаны на этого автора');
+                return $this->redirect(['author/view', 'id' => $authorId]);
+            }
+
             $model = new Subscription([
                 'user_id' => Yii::$app->user->id,
                 'author_id' => $authorId,
             ]);
-            if (!$model->save()) {
-                Yii::$app->session->setFlash('error', 'Не удалось подписаться');
+
+            if ($model->save()) {
+                // Отправляем СМС авторизованному пользователю
+                $user = Yii::$app->user->identity;
+                $smsService = new SmsService();
+                $result = $smsService->send(
+                    $user->phone,
+                    "Вы подписались на обновления автора: {$author->name}",
+                    'subscription'
+                );
+
+                if (!$result['success']) {
+                    Yii::$app->session->setFlash('warning', 'Подписка оформлена, но SMS не отправлено: ' . $result['error']);
+                } else {
+                    Yii::$app->session->setFlash('success', 'Подписка оформлена! SMS-уведомление отправлено.');
+                }
             } else {
-                Yii::$app->session->setFlash('success', 'Подписка оформлена');
+                Yii::$app->session->setFlash('error', 'Не удалось подписаться');
+            }
+
+            return $this->redirect(['author/view', 'id' => $authorId]);
+        }
+
+        // Если пользователь гость - показываем форму с номером телефона
+        $model = new GuestSubscriptionForm();
+        $model->author_id = $authorId;
+
+        if ($model->load(Yii::$app->request->post()) && $model->validate()) {
+            // Создаем подписку для гостя
+            $subscription = new Subscription([
+                'phone' => $model->phone,
+                'author_id' => $authorId,
+            ]);
+
+            if ($subscription->save()) {
+                // Отправляем СМС с рейтлимитом
+                $smsService = new SmsService();
+                $result = $smsService->send(
+                    $model->phone,
+                    "Вы подписались на обновления автора: {$author->name}",
+                    'guest_subscription'
+                );
+
+                if (!$result['success']) {
+                    Yii::$app->session->setFlash('warning', 'Подписка оформлена, но SMS не отправлено: ' . $result['error']);
+                } else {
+                    Yii::$app->session->setFlash('success', 'Подписка оформлена! SMS-уведомление отправлено.');
+                }
+
+                return $this->redirect(['author/view', 'id' => $authorId]);
+            } else {
+                Yii::$app->session->setFlash('error', 'Не удалось подписаться');
             }
         }
 
-        return $this->redirect(['author/view', 'id' => $authorId]);
+        return $this->render('subscribe-guest', [
+            'model' => $model,
+            'author' => $author,
+        ]);
     }
 
     public function actionUnsubscribe(int $id): Response
