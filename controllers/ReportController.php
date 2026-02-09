@@ -27,24 +27,28 @@ class ReportController extends Controller
         ];
     }
 
-    public function actionTopAuthors(): string
+    public function actionTopAuthors(int $year = null): string
     {
+        if ($year === null) {
+            $year = (int)date('Y');
+        }
+
         $authors = Author::find()
             ->alias('a')
             ->select([
                 'a.*',
-                'subscriptions_count' => new Expression('COUNT(DISTINCT s.id)'),
                 'books_count' => new Expression('COUNT(DISTINCT b.id)'),
             ])
-            ->leftJoin('{{%subscription}} s', 's.author_id = a.id')
-            ->leftJoin('{{%book}} b', 'b.author_id = a.id')
+            ->innerJoin('{{%book_author}} ba', 'ba.author_id = a.id')
+            ->innerJoin('{{%book}} b', 'b.id = ba.book_id AND YEAR(b.published_at) = :year', [':year' => $year])
             ->groupBy('a.id')
-            ->orderBy(['subscriptions_count' => SORT_DESC, 'books_count' => SORT_DESC])
+            ->orderBy(['books_count' => SORT_DESC])
             ->limit(10)
             ->all();
 
         return $this->render('top-authors', [
             'authors' => $authors,
+            'year' => $year,
         ]);
     }
 }

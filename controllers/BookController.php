@@ -11,6 +11,7 @@ use yii\filters\VerbFilter;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
+use yii\web\UploadedFile;
 
 /** @extends Controller<Module> */
 class BookController extends Controller
@@ -20,9 +21,14 @@ class BookController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
-                'only' => ['create', 'update', 'delete'],
                 'rules' => [
                     [
+                        'actions' => ['index', 'view'],
+                        'allow' => true,
+                        'roles' => ['?', '@'],
+                    ],
+                    [
+                        'actions' => ['create', 'update', 'delete'],
                         'allow' => true,
                         'roles' => ['@'],
                     ],
@@ -58,8 +64,16 @@ class BookController extends Controller
     public function actionCreate(): Response|string
     {
         $model = new Book();
-        if ($model->load(Yii::$app->request->post()) && $model->save()) {
-            return $this->redirect(['view', 'id' => $model->id]);
+
+        if ($model->load(Yii::$app->request->post())) {
+            $model->coverImageFile = UploadedFile::getInstance($model, 'coverImageFile');
+
+            if ($model->upload() && $model->validate()) {
+                if ($model->save(false)) {
+                    $model->saveAuthors($model->authorIds);
+                    return $this->redirect(['view', 'id' => $model->id]);
+                }
+            }
         }
 
         return $this->render('create', [
@@ -71,8 +85,17 @@ class BookController extends Controller
     public function actionUpdate(int $id): Response|string
     {
         $model = $this->findModel($id);
-        if ($model->load(Yii::$app->request->post()) && $model->save()) {
-            return $this->redirect(['view', 'id' => $model->id]);
+        $model->authorIds = $model->getAuthorIds();
+
+        if ($model->load(Yii::$app->request->post())) {
+            $model->coverImageFile = UploadedFile::getInstance($model, 'coverImageFile');
+
+            if ($model->upload() && $model->validate()) {
+                if ($model->save(false)) {
+                    $model->saveAuthors($model->authorIds);
+                    return $this->redirect(['view', 'id' => $model->id]);
+                }
+            }
         }
 
         return $this->render('update', [

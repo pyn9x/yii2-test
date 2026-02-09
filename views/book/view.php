@@ -22,12 +22,20 @@ $this->title = $model->title;
         'attributes' => [
             'id',
             [
-                'attribute' => 'author_id',
-                'value' => $model->author ? $model->author->name : null,
-                'label' => 'Author',
+                'attribute' => 'authorIds',
+                'value' => implode(', ', array_map(fn($author) => $author->name, $model->authors)),
+                'label' => 'Authors',
             ],
             'title',
+            'isbn',
             'description:ntext',
+            [
+                'attribute' => 'cover_image',
+                'format' => 'raw',
+                'value' => $model->cover_image
+                    ? Html::img('@web/uploads/covers/' . $model->cover_image, ['style' => 'max-width: 300px'])
+                    : null,
+            ],
             'published_at',
             'created_at:datetime',
             'updated_at:datetime',

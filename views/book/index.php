@@ -1,4 +1,6 @@
 <?php
+
+use yii\grid\ActionColumn;
 use yii\grid\GridView;
 use yii\helpers\Html;
 use yii\helpers\ArrayHelper;
@@ -20,13 +22,17 @@ $this->title = 'Books';
         'columns' => [
             'id',
             [
-                'attribute' => 'author_id',
-                'value' => fn($model) => $model->author ? $model->author->name : null,
-                'filter' => ArrayHelper::map(Author::find()->all(), 'id', 'name'),
+                'attribute' => 'title',
+                'format' => 'text',
             ],
-            'title',
+            [
+                'label' => 'Authors',
+                'value' => fn($model) => implode(', ', array_map(fn($author) => $author->name, $model->authors)),
+                'format' => 'text',
+            ],
+            'isbn',
             'published_at',
-            ['class' => 'yii\grid\ActionColumn'],
+            ['class' => ActionColumn::class],
         ],
     ]); ?>
 </div>

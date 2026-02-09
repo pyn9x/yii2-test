@@ -10,8 +10,8 @@ class BookSearch extends Book
     public function rules(): array
     {
         return [
-            [['id', 'author_id'], 'integer'],
-            [['title', 'description', 'published_at'], 'safe'],
+            [['id'], 'integer'],
+            [['title', 'isbn', 'description', 'published_at'], 'safe'],
         ];
     }
 
@@ -25,7 +25,7 @@ class BookSearch extends Book
      */
     public function search(array $params): ActiveDataProvider
     {
-        $query = Book::find()->with('author');
+        $query = Book::find()->with('authors');
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
@@ -40,11 +40,11 @@ class BookSearch extends Book
 
         $query->andFilterWhere([
             'id' => $this->id,
-            'author_id' => $this->author_id,
             'published_at' => $this->published_at,
         ]);
 
         $query->andFilterWhere(['like', 'title', $this->title])
+            ->andFilterWhere(['like', 'isbn', $this->isbn])
             ->andFilterWhere(['like', 'description', $this->description]);
 
         return $dataProvider;

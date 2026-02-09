@@ -19,9 +19,14 @@ class AuthorController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
-                'only' => ['create', 'update', 'delete'],
                 'rules' => [
                     [
+                        'actions' => ['index', 'view'],
+                        'allow' => true,
+                        'roles' => ['?', '@'],
+                    ],
+                    [
+                        'actions' => ['create', 'update', 'delete'],
                         'allow' => true,
                         'roles' => ['@'],
                     ],

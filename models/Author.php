@@ -57,7 +57,8 @@ class Author extends ActiveRecord
     /** @return ActiveQuery<Book> */
     public function getBooks(): ActiveQuery
     {
-        return $this->hasMany(Book::class, ['author_id' => 'id']);
+        return $this->hasMany(Book::class, ['id' => 'book_id'])
+            ->viaTable('{{%book_author}}', ['author_id' => 'id']);
     }
 
     /** @return ActiveQuery<Subscription> */
